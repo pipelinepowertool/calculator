@@ -3,9 +3,10 @@
     <navigation :color="color" :flat="flat"/>
     <v-main class="pt-0">
       <home/>
-      <about/>
       <demo/>
+      <about/>
       <pricing/>
+
       <contact/>
     </v-main>
     <v-scale-transition>

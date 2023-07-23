@@ -5,9 +5,9 @@
         <v-col cols="10">
           <v-row align="center" justify="center">
             <v-col cols="12" md="6" xl="8">
-              <h1 class="display-2 font-weight-bold mb-4">OneCharge</h1>
+              <h1 class="display-2 font-weight-bold mb-4">Pipeline Power Calculator</h1>
               <h1 class="font-weight-light">
-                Hét Europese laad – en betaalsysteem voor iedereen
+                Reken de carbon footprint uit van je CI/CD pipelines
               </h1>
               <v-btn
                 rounded

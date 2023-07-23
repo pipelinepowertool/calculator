@@ -66,7 +66,7 @@
         <v-btn text @click="$vuetify.goTo('#download')">
           <span class="mr-2">Demo</span>
         </v-btn>
-        <v-btn text @click="$vuetify.goTo('#pricing')">
+        <v-btn text @click="$vuetify.goTo('#pricing')" v-if="canLoadCalculations">
           <span class="mr-2">Prijzen</span>
         </v-btn>
         <v-btn rounded outlined text @click="$vuetify.goTo('#contact')">
@@ -89,10 +89,13 @@
 </style>
 
 <script>
+import eventBus from "@/components/eventbus";
+
 export default {
   data: () => ({
     drawer: null,
     isXs: false,
+    canLoadCalculations: false,
     items: [
       ["mdi-home-outline", "Home", "#hero"],
       ["mdi-information-outline", "Informatie", "#features"],
@@ -110,7 +113,10 @@ export default {
       this.isXs = window.innerWidth < 850;
     },
   },
-
+  beforeDestroy() {
+    // removing eventBus listener
+    eventBus.$off('custom-event')
+  },
   watch: {
     isXs(value) {
       if (!value) {
@@ -123,6 +129,10 @@ export default {
   mounted() {
     this.onResize();
     window.addEventListener("resize", this.onResize, { passive: true });
+    eventBus.$on('load-calculations-navigation', () => {
+      console.log('Custom event triggered!')
+      this.canLoadCalculations = true;
+    })
   },
 };
 </script>
