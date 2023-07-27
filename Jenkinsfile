@@ -5,7 +5,7 @@ pipeline {
       steps {
         pipelinePowerToolInitiator()
         sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} docker.io"
-        sh 'docker buildx create --name raspberry-builder --platform "linux/arm64,linux/arm/v7,linux/arm/v6" --driver "docker-container"'
+        sh 'docker buildx create --name raspberry-builder --platform "linux/arm64,linux/arm/v7,linux/arm/v6" --driver "docker-container 2>/dev/null"'
         sh 'docker buildx use raspberry-builder'
         sh "docker buildx build --platform='linux/arm64' -t sdenboer/pipelinepowertool-calculator . --push"
 //         sh "docker push sdenboer/pipelinepowertool-calculator"
