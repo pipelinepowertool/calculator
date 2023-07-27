@@ -1,5 +1,5 @@
 <template>
-  <section id="pricing" class="pb-8" v-if="canLoad">
+  <section id="pricing" class="pb-8" v-show="canLoad">
     <v-container fluid>
       <v-row align="center" justify="center">
         <v-col cols="10">
@@ -32,15 +32,27 @@
                   <v-btn value="0">
                     Totaal
                   </v-btn>
-                  <v-btn value="1">
+                  <v-btn value="1" v-if="responseBody.co2PerHour != null">
                     Per Run
                   </v-btn>
-                  <v-btn value="2">
+                  <v-btn value="2" v-if="responseBody.co2PerHour != null">
                     Per Uur
                   </v-btn>
                 </v-btn-toggle>
               </v-col>
             </v-row>
+
+            <v-row class="text-center" justify="center">
+              <v-col class="col-12 col-sm-6 col-md-4">
+                <div class="flex-center">
+                  <v-card-text v-for="data in simpleData" :key="data.label" v-if="!data.hideInSelectedGroup()">
+                    <div class="text-uppercase text-h4  mt-6 blue--text">{{ data.calculation() }}</div>
+                    <div class="text-uppercase blue--text">{{data.label}}</div>
+                  </v-card-text>
+                </div>
+              </v-col>
+            </v-row>
+
             <v-row class="text-center" justify="center" v-if="pricePerKwh != 0">
               <v-col class="col-12 col-sm-6 col-md-4">
                 <div class="flex-center">
@@ -52,20 +64,15 @@
                         </div>
                       </div>
                     </div>
-<!--                    <v-divider class="my-2"/>-->
                     <div class="text-uppercase text-h4  mt-6 blue--text">€ {{ calculatePrice }}</div>
-<!--                    <v-divider class="my-2"/>-->
                     <div class="text-uppercase blue--text">Uitgegeven</div>
 
                   </v-card-text>
-<!--                  <v-divider style="margin-right: -23px" vertical v-if="sizeTwo"></v-divider>-->
                 </div>
-<!--                <v-divider class="mx-4" v-if="!sizeTwo"></v-divider>-->
               </v-col>
             </v-row>
-<!--            <v-divider class="my-6"></v-divider>-->
             <v-row class="text-center">
-              <v-col class="col-12 col-sm-6 col-md-4" v-for="equivalent in equivalencies">
+              <v-col class="col-12 col-sm-6 col-md-4" v-for="equivalent in equivalencies" :key="equivalent.img">
                 <div class="flex-center">
                   <v-card-text>
                     <div class="flex-center">
@@ -75,15 +82,15 @@
                         </div>
                       </div>
                     </div>
-<!--                    <v-divider class="my-2"/>-->
                     <div class="text-uppercase text-h4  mt-6 blue--text">{{ equivalent.calculation([0]) }}</div>
-<!--                    <v-divider class="my-2"/>-->
-                    <div class="text-uppercase blue--text">{{ equivalent.label }}</div>
-
+                    <div class="text-uppercase blue--text">
+                      {{ equivalent.label }}
+                      <v-btn icon style="justify-content: left" @click="goToUrl(equivalent.source)">
+                        <v-icon color="info" size="large">mdi-information-outline</v-icon>
+                      </v-btn>
+                    </div>
                   </v-card-text>
-<!--                  <v-divider style="margin-right: -23px" vertical v-if="sizeTwo"></v-divider>-->
                 </div>
-<!--                <v-divider class="mx-4" v-if="!sizeTwo"></v-divider>-->
               </v-col>
             </v-row>
           </v-card>
@@ -196,13 +203,17 @@ section {
 
 <script>
 import eventBus from "@/components/eventbus";
+import axios from "axios";
+
 export default {
   mounted() {
-    eventBus.$on('custom-event', () => {
-      console.log('Custom event triggered!')
+    eventBus.$on('custom-event', (args) => {
+      console.log(args)
+      axios.get("https://api.madebysven.com/calculator/jenkins" + args).then(response => {
+        this.responseBody = response.data
+      })
       this.canLoad = true;
       eventBus.$emit('load-calculations-navigation')
-
     })
   },
   beforeDestroy() {
@@ -211,22 +222,22 @@ export default {
   },
   data() {
     return {
-      canLoad: true,
+      canLoad: false,
       pricePerKwh: 0,
       groups: {
-        co2: ["co2ProducedTotalGr", "co2ProducingPerRunGr", "co2ProducingPerHourGr"],
-        kwh: ["kwhUsedTotal", "kwhUsedPerRun", "kwhUsedPerHour"],
+        co2: ["co2Total", "co2PerRun", "co2PerHour"],
+        kwh: ["kwhTotal", "kwhPerRun", "kwhPerHour"],
       },
       selectedGroup: 0,
       responseBody: {
-        kwhUsedTotal: 15321,
-        kwhUsedPerRun: 0.1,
-        kwhUsedPerHour: 1,
-        pipelineRuns: 185,
-        runtimeSeconds: 16584,
-        co2ProducedTotalGr: 15321 / 100,
-        co2ProducingPerRunGr: 5,
-        co2ProducingPerHourGr: 1,
+        kwhTotal: null,
+        kwhPerRun: null,
+        kwhPerHour: null,
+        pipelineRuns: null,
+        runtime: null,
+        co2Total: null,
+        co2PerRun: null,
+        co2PerHour: null,
         cpuUtilization: null,
       },
 
@@ -237,53 +248,108 @@ export default {
       const kwh = this.responseBody[this.groups.kwh[this.selectedGroup]];
       return this.prettyPrintNumber(kwh * this.pricePerKwh)
     },
+    simpleData() {
+      return [
+        {
+          label: "kWh",
+          calculation: () => this.responseBody[this.groups.kwh[this.selectedGroup]],
+          hideInSelectedGroup: () => false
+        },
+        {
+          label: "Pipeline Runs",
+          calculation: () => {
+            if (this.selectedGroup == 0) {
+              return this.responseBody.pipelineRuns;
+            }
+            if (this.selectedGroup == 2) {
+              return this.prettyPrintNumber(this.calculateRunsPerHour(this.responseBody.pipelineRuns, this.responseBody.runtime))
+            }
+            if (this.selectedGroup == 1) {
+              return 1;
+            }
+          },
+          hideInSelectedGroup: () => this.selectedGroup == 1 ? true : false
+        },
+        {
+          label: "CPU-gebruik",
+          calculation: () => this.responseBody.cpuUtilization + "%",
+          hideInSelectedGroup: () => false
+        },
+        {
+          label: "Verbruiksuren",
+          calculation: () => {
+            const runtimePerHour = this.responseBody.runtime / 3600;
+            if (this.selectedGroup == 0) {
+              return runtimePerHour.toFixed(0)
+            }
+            if (this.selectedGroup == 2) {
+              return runtimePerHour > 1 ? 1 : runtimePerHour;
+            }
+            if (this.selectedGroup == 1) {
+              return this.prettyPrintNumber(this.calculateRunTimePerRun(this.responseBody.pipelineRuns, this.responseBody.runtime))
+            }
+          },
+          hideInSelectedGroup: () => this.selectedGroup == 2 ? true : false
+        }
+      ]
+    },
     equivalencies() {
       return [
+
         {
           label: "Kilometer gereden met een elektrische auto",
           img: "electric-car.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateKmTravelElectricCar(this.responseBody[this.groups.kwh[this.selectedGroup]]))
+          source: "https://tesla360.nl/tesla-model-3-hoeveel-kwh-per-100-km/",
+          calculation: () => this.prettyPrintNumber(this.calculateKmTravelElectricCar(this.responseBody[this.groups.kwh[this.selectedGroup]]))
         },
         {
           label: "Kilometer gereden met een benzine auto",
           img: "gas-station.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateKmTravelGasolineCar(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://vandebron.nl/blog/gemiddeld-stroomverbruik",
+          calculation: () => this.prettyPrintNumber(this.calculateKmTravelGasolineCar(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         {
           label: "Kilometer gevlogen met een vliegtuig",
           img: "plane.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateKmTravelAirplane(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://www.milieucentraal.nl/duurzaam-vervoer/co2-uitstoot-fiets-ov-en-auto",
+          calculation: () => this.prettyPrintNumber(this.calculateKmTravelAirplane(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         {
           label: "kWh Elektriciteit verbruikt van een standaard huishouden per dag",
           img: "house.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateEnergyOfHomesUsed(this.responseBody[this.groups.kwh[this.selectedGroup]]))
+          source: "https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019",
+          calculation: () => this.prettyPrintNumber(this.calculateEnergyOfHomesUsed(this.responseBody[this.groups.kwh[this.selectedGroup]]))
         },
         {
           label: "Smartphones opgeladen",
           img: "smartphone.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateSmartphonesCharged(this.responseBody[this.groups.kwh[this.selectedGroup]]))
+          source: "https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references#smartphones",
+          calculation: () => this.prettyPrintNumber(this.calculateSmartphonesCharged(this.responseBody[this.groups.kwh[this.selectedGroup]]))
         },
         {
           label: "Kilometer afgelegd met een vrachtschip (van een 2kg pakketje)",
           img: "freight.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateKmTravel2KgPackageFreight(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://greenandgrumpy.com/whats-the-carbon-footprint-of-a-cup-of-tea",
+          calculation: () => this.prettyPrintNumber(this.calculateKmTravel2KgPackageFreight(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
 
         {
           label: "Kilo aardappelen geproduceerd",
           img: "potato.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculatePotatoesProduced(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://www.co2everything.com/co2e-of/potatoes",
+          calculation: () => this.prettyPrintNumber(this.calculatePotatoesProduced(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         {
           label: "Glazen wijn geproduceerd",
           img: "wine-glass.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateGlassesOfWineProduced(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://www.co2everything.com/co2e-of/freight-shipping",
+          calculation: () => this.prettyPrintNumber(this.calculateGlassesOfWineProduced(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         {
           label: "Kopjes thee gemaakt",
           img: "tea.png",
-          calculation: (v) => this.prettyPrintNumber(this.calculateBoilingCupsOfWater(this.responseBody[this.groups.co2[this.selectedGroup]]))
+          source: "https://www.co2everything.com/co2e-of/wine",
+          calculation: () => this.prettyPrintNumber(this.calculateBoilingCupsOfWater(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         // {
         //   label: "Kilometers gereden met een elektrische auto",
@@ -304,8 +370,12 @@ export default {
 
   },
   methods: {
+    goToUrl(url) {
+      window.open(url);
+
+    },
     getImgUrl(pic) {
-      return require('../assets/img/usage/'+pic)
+      return require('../assets/img/usage/' + pic)
     },
     prettyPrintNumber(nr) {
       return parseFloat(nr.toFixed(2)).toLocaleString("nl-NL")
@@ -320,26 +390,33 @@ export default {
       return co2gr / 149; //https://www.milieucentraal.nl/duurzaam-vervoer/co2-uitstoot-fiets-ov-en-auto
     },
     calculateKmTravelAirplane(co2gr) {
-      return co2gr / 101 //https://www.airsidelife.com/how-many-passengers-can-a-plane-carry/ & https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019
+      return co2gr / 101; //https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019
     },
     calculateSmartphonesCharged(kwh) {
-      return kwh / 0.012 //https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references#smartphones
+      return kwh / 0.012; //https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references#smartphones
     },
     calculateBoilingCupsOfWater(co2gr) {
       return co2gr / 23; //https://greenandgrumpy.com/whats-the-carbon-footprint-of-a-cup-of-tea
     },
-    calculateGrBeefProduced(co2gr) {
-      return co2gr / 155 //https://www.co2everything.com/co2e-of/beef
-    },
+
     calculatePotatoesProduced(co2gr) {
-      return co2gr / 50 //https://www.co2everything.com/co2e-of/potatoes
+      return co2gr / 50; //https://www.co2everything.com/co2e-of/potatoes
     },
     calculateKmTravel2KgPackageFreight(co2gr) {
-      return co2gr / 0.03 //https://www.co2everything.com/co2e-of/freight-shipping
+      return co2gr / 0.03; //https://www.co2everything.com/co2e-of/freight-shipping
     },
     calculateGlassesOfWineProduced(co2gr) {
-      return co2gr / 130 //https://www.co2everything.com/co2e-of/wine
+      return co2gr / 130; //https://www.co2everything.com/co2e-of/wine
     },
+    calculateGrBeefProduced(co2gr) {
+      return co2gr / 155; //https://www.co2everything.com/co2e-of/beef
+    },
+    calculateRunsPerHour(runs, runtime) {
+      return runs / (runtime / 3600);
+    },
+    calculateRunTimePerRun(runs, runtime) {
+      return (runtime / 3600) / runs;
+    }
   }
 };
 </script>

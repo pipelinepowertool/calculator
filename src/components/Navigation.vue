@@ -60,17 +60,11 @@
         <v-btn text @click="$vuetify.goTo('#hero')">
           <span class="mr-2">Home</span>
         </v-btn>
-        <v-btn text @click="$vuetify.goTo('#features')">
-          <span class="mr-2">Informatie</span>
-        </v-btn>
         <v-btn text @click="$vuetify.goTo('#download')">
-          <span class="mr-2">Demo</span>
+          <span class="mr-2">Calculator</span>
         </v-btn>
         <v-btn text @click="$vuetify.goTo('#pricing')" v-if="canLoadCalculations">
-          <span class="mr-2">Prijzen</span>
-        </v-btn>
-        <v-btn rounded outlined text @click="$vuetify.goTo('#contact')">
-          <span class="mr-2">Contact</span>
+          <span class="mr-2">Verbruik</span>
         </v-btn>
       </div>
     </v-app-bar>
@@ -99,9 +93,8 @@ export default {
     items: [
       ["mdi-home-outline", "Home", "#hero"],
       ["mdi-information-outline", "Informatie", "#features"],
-      ["mdi-download-box-outline", "Demo", "#download"],
+      ["mdi-download-box-outline", "Calculator", "#download"],
       ["mdi-currency-usd", "Prijzen", "#pricing"],
-      ["mdi-email-outline", "Contact", "#contact"],
     ],
   }),
   props: {
@@ -115,7 +108,7 @@ export default {
   },
   beforeDestroy() {
     // removing eventBus listener
-    eventBus.$off('custom-event')
+    eventBus.$off('load-calculations-navigation')
   },
   watch: {
     isXs(value) {
@@ -130,7 +123,6 @@ export default {
     this.onResize();
     window.addEventListener("resize", this.onResize, { passive: true });
     eventBus.$on('load-calculations-navigation', () => {
-      console.log('Custom event triggered!')
       this.canLoadCalculations = true;
     })
   },

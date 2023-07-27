@@ -4,10 +4,8 @@
     <v-main class="pt-0">
       <home/>
       <demo/>
-      <about/>
+<!--      <about/>-->
       <pricing/>
-
-      <contact/>
     </v-main>
     <v-scale-transition>
       <v-btn
@@ -24,7 +22,7 @@
         <v-icon>mdi-arrow-up</v-icon>
       </v-btn>
     </v-scale-transition>
-    <ftr/>
+<!--    <ftr/>-->
   </v-app>
 </template>
 
@@ -44,23 +42,22 @@ import home from "./components/HomeSection";
 import about from "./components/AboutSection";
 import demo from "./components/DemoSection.vue";
 import pricing from "./components/PricingSection";
-import contact from "./components/ContactSection";
 import ogImage from "./assets/img/one-whatsapp.png"
 
 
 export default {
   name: "App",
   metaInfo: {
-    title: "OneCharge",
+    title: "Calculator",
       meta: [
-        {name: "description", content: "Landing Page for OneCharge demo"},
-        {property: "og:title", content: "OneCharge"},
-        {property: "og:url", content: "https://onecharge.madebysven.com"},
-        {property: "og:description", content: "Landing Page for OneCharge demo"},
+        {name: "description", content: "Pipeline Power Tool Calculator"},
+        {property: "og:title", content: "Calculator"},
+        {property: "og:url", content: "https://calculator.madebysven.com"},
+        {property: "og:description", content: "Pipeline Power Tool Calculator"},
         {property: "og:type", content: "website"},
         {property: "og:locale", content: "nl_NL"},
-        {property: "og:image", itemprop:"image", content: "https://onecharge.madebysven.com" + ogImage},
-        {property: "og:image:secure_url", content: "https://onecharge.madebysven.com" + ogImage},
+        {property: "og:image", itemprop:"image", content: "https://calculator.madebysven.com" + ogImage},
+        {property: "og:image:secure_url", content: "https://calculator.madebysven.com" + ogImage},
         {property: "og:image:type", content: "image/png"},
       ],
   },
@@ -72,7 +69,6 @@ export default {
     about,
     demo,
     pricing,
-    contact,
   },
 
   data: () => ({
@@ -83,7 +79,7 @@ export default {
 
   created() {
     const top = window.pageYOffset || 0;
-    document.title = 'OneCharge';
+    document.title = 'Pipeline Power Tool Calculator';
     if (top <= 60) {
       this.color = "transparent";
       this.flat = true;

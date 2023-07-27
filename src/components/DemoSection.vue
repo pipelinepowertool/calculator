@@ -8,7 +8,7 @@
               <v-img src="@/assets/img/ill2.svg" class="d-block ml-auto mr-auto" max-width="350px"/>
             </v-col>
             <v-col cols="12" sm="8" class="white--text text-left">
-              <h1 class="font-weight-light display-2 mb-2">Demo</h1>
+              <h1 class="font-weight-light display-2 mb-2">Calculator</h1>
               <v-form v-if="step === 1" ref="form" v-model="valid" :lazy-validation="lazy">
 
 <!--                STEP ONE-->
@@ -31,7 +31,7 @@
                       required
                   ></v-text-field>
                 </v-form>
-                <v-form ref="form" :lazy-validation="lazy">
+                <v-form ref="form" :lazy-validation="lazy" v-if="jenkinsChoices.jobName != ''">
                   <v-text-field
                       v-model="jenkinsChoices.branchName"
                       type="text"
@@ -40,7 +40,7 @@
                       required
                   ></v-text-field>
                 </v-form>
-                <v-form ref="form" :lazy-validation="lazy">
+                <v-form ref="form" :lazy-validation="lazy" v-if="jenkinsChoices.jobName != ''">
                   <v-text-field
                       v-model="jenkinsChoices.buildNumber"
                       type="number"
@@ -140,18 +140,13 @@ export default {
     selectedCicdTool: "Jenkins",
     refuelled: "",
     jenkinsChoices: {
-      jobName: null,
-      branchName: null,
-      buildNumber: null
+      jobName: "",
+      branchName: "",
+      buildNumber: ""
     },
     commonChoices: {
-      // pricePerKwh: null,
       agentCountry: "NL",
     },
-    phone: "",
-    phoneRules: [
-      // (v) => (v === "" ||  || "Incorrect nummer"
-    ],
     countryRules: (v) => {
       try {
         const s = new Intl.DisplayNames(['en'], {type: 'region'}).of(v);
@@ -167,11 +162,22 @@ export default {
       text: '',
       color: ''
     },
-    refuelOperation: ""
   }),
   methods: {
     submit1() {
-      eventBus.$emit('custom-event')
+      let args = "";
+      if (this.jenkinsChoices.jobName != "") {
+        args += "?job=" + this.jenkinsChoices.jobName;
+        if (this.jenkinsChoices.branchName != "") {
+          args += "&branch=" + this.jenkinsChoices.branchName;
+        }
+        if (this.jenkinsChoices.buildNumber != "") {
+          args += "&build=" + this.jenkinsChoices.buildNumber;
+        }
+
+      }
+      eventBus.$emit('custom-event', args)
+
     },
     submit2() {
       axios.get('https://onechargeapi.madebysven.com/rfid/' + this.rfid).then(response => {
