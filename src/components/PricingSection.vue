@@ -208,12 +208,12 @@ import axios from "axios";
 export default {
   mounted() {
     eventBus.$on('custom-event', (args) => {
-      console.log(args)
       axios.get("https://api.madebysven.com/calculator/jenkins" + args).then(response => {
         this.responseBody = response.data
+        this.canLoad = true;
+        eventBus.$emit('load-calculations-navigation')
       })
-      this.canLoad = true;
-      eventBus.$emit('load-calculations-navigation')
+
     })
   },
   beforeDestroy() {
@@ -222,6 +222,7 @@ export default {
   },
   data() {
     return {
+      refresh: 0,
       canLoad: false,
       pricePerKwh: 0,
       groups: {
@@ -250,6 +251,17 @@ export default {
     },
     simpleData() {
       return [
+        {
+          label: "CO2",
+          calculation: () => {
+            const co2 = this.responseBody[this.groups.co2[this.selectedGroup]];
+            if (co2 > 1000) {
+              return parseFloat(co2/1000).toFixed(2) + "kg";
+            }
+            return co2 + "g"
+          },
+          hideInSelectedGroup: () => false
+        },
         {
           label: "kWh",
           calculation: () => this.responseBody[this.groups.kwh[this.selectedGroup]],
@@ -294,8 +306,8 @@ export default {
       ]
     },
     equivalencies() {
+      this.refresh;
       return [
-
         {
           label: "Kilometer gereden met een elektrische auto",
           img: "electric-car.png",
@@ -315,7 +327,7 @@ export default {
           calculation: () => this.prettyPrintNumber(this.calculateKmTravelAirplane(this.responseBody[this.groups.co2[this.selectedGroup]]))
         },
         {
-          label: "kWh Elektriciteit verbruikt van een standaard huishouden per dag",
+          label: "Elektriciteit verbruikt van een standaard huishouden per dag",
           img: "house.png",
           source: "https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019",
           calculation: () => this.prettyPrintNumber(this.calculateEnergyOfHomesUsed(this.responseBody[this.groups.kwh[this.selectedGroup]]))
@@ -370,9 +382,11 @@ export default {
 
   },
   methods: {
+    refreshCalc() {
+      this.refresh++;
+    },
     goToUrl(url) {
       window.open(url);
-
     },
     getImgUrl(pic) {
       return require('../assets/img/usage/' + pic)

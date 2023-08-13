@@ -126,17 +126,6 @@ export default {
     nameRules: [
       (v) => !!v || "Naam is verplicht",
     ],
-    rfid: null,
-    rfidTags: [
-      "02928d0d-523e-47f5-bb0a-aded145a2e57",
-      "6cda37e4-9f62-4408-bc85-574767d55381",
-      "102a96ab-1d8f-4fc7-8db8-8e8ece3daef6",
-      "e611df37-acba-43b6-8211-17b0896f7a5a",
-      "04969c88-e9ab-4f55-bf6c-fb1a40b47018",
-      "05a7cd0a-f737-4762-a217-2ee29221042a",
-      "7aa38cbf-0c9d-4395-9d87-7a72a75f41a7",
-      "6d7b7a9c-341e-4567-ba10-cc6f0c54b7f3"
-    ],
     selectedCicdTool: "Jenkins",
     refuelled: "",
     jenkinsChoices: {
@@ -165,16 +154,15 @@ export default {
   }),
   methods: {
     submit1() {
-      let args = "";
+      let args = "?country=" + this.commonChoices.agentCountry;
       if (this.jenkinsChoices.jobName != "") {
-        args += "?job=" + this.jenkinsChoices.jobName;
+        args += "&job=" + this.jenkinsChoices.jobName;
         if (this.jenkinsChoices.branchName != "") {
           args += "&branch=" + this.jenkinsChoices.branchName;
         }
         if (this.jenkinsChoices.buildNumber != "") {
           args += "&build=" + this.jenkinsChoices.buildNumber;
         }
-
       }
       eventBus.$emit('custom-event', args)
 
@@ -185,13 +173,6 @@ export default {
       this.snackbar.enabled = true
     }
   },
-  watch: {
-    step(step) {
-      if (step === 2) {
-        this.pollRfidEndpoint();
-      }
-    }
-  }
 };
 </script>
 <style scoped>
